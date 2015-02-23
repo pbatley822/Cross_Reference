@@ -1,0 +1,196 @@
+1	//*************************************************************************************************//
+2	//****																						   ****//
+3	//**							----==== Radix Sort ====----									 **//
+4	//**																							 **//
+5	//**								  Gabriel Prestemon											 **//
+6	//****																						   ****//
+7	//*************************************************************************************************//
+8	
+9	#include "doubleLinkedList.h"
+10	#include <iostream>
+11	#include <string>
+12	#include <math.h>
+13	#include <time.h>
+14	
+15	using namespace std;
+16	
+17	
+18	//Sort function
+19	void radixSort(list *l);
+20	
+21	//calculates the number of passes the radix sort must take to sort all the numbers
+22	int calculatePasses(list *l);
+23	
+24	//obtains the largest number in the list
+25	int findLargest(list *l);
+26	
+27	//distributes the numbers into bins relating to the digit of the pass that the sort is on
+28	void binDistribution(list *l, int pass, list* bins[]);
+29	
+30	//returns the number of the bin which the number should be sorted into
+31	int calculateBinNumber(int pass, int itemBeingSorted);
+32	
+33	//returns all numbers to the  original list
+34	void returnToOriginalList(list *mainList, list *numBin);
+35	
+36	
+37	
+38	int main()
+39	{
+40		list* toSort = newList();
+41	
+42		cout << "Welcome to RadixSort!" << endl;
+43		cout << "This program will sort a list of posititve integers up to base 10." << endl;
+44	
+45		//ask the user for a random list or inputted list, loop if choice is improper
+46		bool properInput = false;
+47		while (!properInput){
+48			//ask user if the list will be random or inputted
+49			cout << "Enter \"random\" for a random list, or \"input\" to input your own list." << endl;
+50			string userChoice;
+51			cin >> userChoice;
+52	
+53			if (userChoice == "random"){
+54				cout << "\nFilling the list with random numbers, base 10...\n";
+55	
+56				//fill the list with random numbers
+57				srand(time(NULL));
+58				for (int i = 0; i < 100; i++){
+59					pushFront(toSort, rand() % 10000);
+60				}
+61				displayList(toSort);
+62	
+63				//input is good, break from the loop
+64				properInput = true;
+65			}
+66			else if (userChoice == "input"){
+67				cout << "\nPlease enter 20 positive numbers.\n";
+68				int userIn;
+69	
+70				//fill the list with user input
+71				for (int i = 0; i < 20; i++){
+72					cin >> userIn;
+73					pushBack(toSort, userIn);
+74				}
+75	
+76				//input is good, break from the loop
+77				properInput = true;
+78			}
+79			else {
+80				//input is not good, ask for input again
+81				cout << "\nChoice not recognized, sorry, please try again.\n\n";
+82				properInput = false;
+83			}
+84		}
+85	
+86		radixSort(toSort);
+87	
+88		cout << endl << "The list has been sorted!" << endl;
+89		displayList(toSort);
+90		cout << "\n\n\nThank you, and have a nice day!\n\n";
+91	
+92		cout << "\n\n\n";
+93		system("pause");
+94		return 0;
+95	}
+96	
+97	//Sort function
+98	void radixSort(list *l)
+99	{
+100		//create a list of bins to sort numbers into
+101		list* bins[10];
+102		for (int i = 0; i < 10; i++){
+103			bins[i] = newList();
+104		}
+105	
+106		//set up pass counts (current pass and number of passes)
+107		int passes = calculatePasses(l);
+108		int pass = 0;
+109	
+110		while (pass < passes){
+111			//for every pass, sort the numbers into their corresponding bins according
+112			//to the current digit for the pass and return them to the list
+113			binDistribution(l, pass, bins);
+114			pass++;
+115		}
+116	
+117		//deletes the list from memory after the sort has finished
+118		for (int i = 0; i < 10; i++){
+119			freeList(bins[i]);
+120		}
+121	}
+122	
+123	
+124	//calculates the number of passes the radix sort must take to sort all the numbers
+125	int calculatePasses(list *l)
+126	{
+127		int largest = findLargest(l);
+128		//passes = number of digits of the largest number, count the digits of the largest number
+129		int passes = 0;
+130	
+131		//divide the largest by 10, every operation is a digit and a pass
+132		while (largest > 0){
+133			largest /= 10;
+134			passes++;
+135		}
+136		return passes;
+137	}
+138	
+139	
+140	//obtains the largest number in the list
+141	int findLargest(list *l)
+142	{
+143		int largest = l->front->content;
+144		node* hold = l->front->next;
+145	
+146		//cycle through the list until the end
+147		while (hold != NULL){
+148			if (hold->content > largest){
+149				largest = hold->content;
+150			}
+151			hold = hold->next;
+152		}
+153		return largest;
+154	}
+155	
+156	
+157	
+158	//distributes the numbers into bins relating to the digit of the pass that the sort is on
+159	void binDistribution(list *l, int pass, list* bins[])
+160	{
+161		//loop to empty the entire list
+162		while (!isEmpty(l)){
+163	
+164			//obtain the next number in the list to be sorted
+165			int numberToBeSorted = popFront(l);
+166	
+167			//obtain the bin number in which the number will be sorted into
+168			int binNumber = calculateBinNumber(pass, numberToBeSorted);	
+169	
+170			//inserts the number into it's corresponding bin
+171			pushBack(bins[binNumber], numberToBeSorted);
+172		}
+173	
+174		//returns all numbers to the original list
+175		for (int i = 0; i < 10; i++){
+176			returnToOriginalList(l, bins[i]);
+177		}
+178	}
+179	
+180	
+181	//returns the number of the bin which the number should be sorted into
+182	int calculateBinNumber(int pass, int numberToBeSorted)
+183	{
+184		int placeValue = pow(10, pass);
+185		int binNumber = (numberToBeSorted / placeValue) % 10;
+186		return binNumber;
+187	}
+188	
+189	
+190	//returns all numbers to the original list
+191	void returnToOriginalList(list *mainList, list *numBin)
+192	{
+193		while (!isEmpty(numBin)){
+194			pushBack(mainList, popFront(numBin));
+195		}
+196	}
